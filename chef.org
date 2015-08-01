@@ -1,0 +1,50 @@
+recipe declare an state. not how to get there
+resources have actions. and a default action which is run by default
+
+Chef server: repo for cookbooks and nodes info
+
+* cli
+** chef-apply to apply a single recipe
+** chef-client to run a cookbook
+--run-list to supply recipes to run
+** chef runs the recipe in order it's written
+** chef generate cookbook [name]
+** chef generate template [cookbook] [template_file_name]
+
+** knife, communication between workstation and server
+*** knife cookbook site; interact with cookbooks at chef supermarket
+download; download cookbook archive file
+*** knife cookbook; interact with cookbooks on server or local
+upload; upload local cookbook to the server
+*** knife bootstrap; bootstraps a new or exiting node
+--ssh-user
+--ssh-password
+--sudo
+--use-sudo-password
+--run-list
+--node-name
+* resources
+[first action is the default one]
+:nothing action is used to define and config a resource to invoke with other resources.
+** file ([[https://docs.chef.io/resource_file.html][docs]])
+actions: :create, :create_if_missing, :delete, :nothing, :touch
+** directory ([[https://docs.chef.io/resource_directory.html][docs]])
+actions: :create, :delete, :nothing
+** package ([[http://docs.chef.io/resource_package.html][docs]])
+install packages (package manager, gems, etc.)
+actions: :install, :nothing, :purge, :reconfig, :remove, :upgrade
+base resource for many others; like: pacman_package, gem_package, easy_install_package, homebrew_package
+** service ([[http://docs.chef.io/resource_service.html][docs]])
+runs more specific ones based on platform.
+actions: :nothing, :disable, :enable, :start, :reload, :restart, :stop
+** template ([[https://docs.chef.io/resource_template.html][docs]])
+use a template to generate file. main param is name of the generated file.
+actions: :create, :create_if_missing, :delete, :nothing, :touch
+** -
+
+* syntax
+resource 'main-param' do
+  action: action or [act, ions]
+  attribute value
+  ..
+end

@@ -1,0 +1,911 @@
+so, as I'm bored with everything and I don't wanna do anything I have to do. and I don't want to do things I usually do for fun.
+so let's right battleship in elixir.
+
+* Elixir
+** basics
+*** integers
+0x22 # hex
+0b11 # bin
+0o22 # oct
+is_integer
+is_number
+
+*** floats
+scientific notation
+1.0e-2
+round/1 to round
+trunc/1 to get integer part
+is_float
+is_number
+
+*** booleans
+true, false are actually atoms
+is_boolan/1
+
+*** atoms
+just like ruby symbols
+
+*** strings
+UTF-8
+"
+are actually bytes
+is_binary('string') #true
+IO.puts/1 to print
+byte_size/1
+String.length/1
+interpolation just like ruby
+String module for more functions
+
+*** anonymous functions
+between 'fn' and 'end':
+add = fn a,b -> a+b end
+is_function/1
+is_function/2 # fn, arity
+call with dot and parentheses:
+add.(1,2)
+are first class citizens
+
+*** [Linked] lists
+can have mixed types
+length/1
+++/2 to join lists
+--/2 to subtract
+hd/1 to get head \
+tl/1 to get tail _\----> result in error with an empty list
+list of ascii codes, will result in charlist: [65, 66, 67] # 'ABC'
+' represents charlist and " string.
+
+*** Tuples
+like lists with {}
+are contagious in memory so length and index access is fast
+tuple_size/1
+elem/2 # tuple, index
+put_elem/2 # tuple, index, elem
+*** list and tuples
+prepending to list is fast: [0] ++ list
+list are faster to modify and tuples faster to access and expensive to modify
+sth_size means it's in constant time and sth_length means it has to be calculated.
+*** Other types
+PID, Reference, Port
+
+*** Operators
+<>/2 string concatenation: "foo" <> "bar"
+and, or, not: work with booleans only, short-circuit (and, or map to andalso and orelse in erlang)
+&&, ||, ! work with any type; everything other than false and nil is trueresu
+==, !=, <=, >=, ===, !==; === is stricter in floats vs integers
+different data types can be compared: number < atom < reference < functions < port < pid < tuple < maps < list < bitstring
+
+?x when x is a character returns it's code:
+?w # 119
+
+** pattern matching
+*** deconstructing
+{a,b,c} = {:hello, 2, "bye"}
+*** partial match
+{:ok, result} = {:ok, 13} # the right side must start with :ok
+*** prepending to list:
+list  = [1,2,3]
+list2 = [0|list]
+*** separating head and tail
+[h|t] = [1,2,3,4] # h=1, t=[2,3,4]
+
+*** pin operator ^
+used to match against value of a variable
+*** _ for unused match
+[h|_] = [1,2,3]
+you can't read _
+** case, cond, if
+*** case
+case 'variable' do
+match1 ->
+
+match2 ->
+
+_ -> # any match
+end
+
+you can't use just anything in guard expressions.
+errors in guards won't leak, just make the guard fail
+if nothing is matched, an error is raised.
+**** guards:
+case {1,2,3} do
+{1,x,3} when x > 0 ->
+
+_ -> # any match
+end
+
+**** anonymous functions can have multiple clauses and guards
+number of arguments has to be the same
+abs = fn
+  x when x >= 0 -> x
+  x -> -x
+end
+*** cond
+check for different or unrelated conditions
+raises error if nothing match so 'true' case is just like else
+anything other than nil or false is true
+cond do
+  x == y ->
+    # do something
+  y == z ->
+    # do something else
+  true ->
+    # else
+end
+*** if and unless
+both are macros,
+if unfolds to case, and unless to if
+unless true
+
+end
+
+if true do
+
+else
+
+end
+*** do, end
+do itself gets an expression:
+if true, do: 1 + 2
+(maybe I'm wrong but seems something to pass a block hence the comma)
+without using do/end block passing multiple expression (keyword lists) would be like this:
+if true, do:(
+  # something
+  # and something else
+  # and more
+)
+else would be like this
+if true, do: :something, else: :orelse
+
+do block bounds to the outermost function:
+in "is_number if true do....end", do is bound to is_number, do this instead:
+is_number(if true do....end)
+** binary and char lists
+binaries are defined like this: <<1,2,3,4>>
+you can use modifiers: <<1,2,3,4::size(10)>>
+strings with " are binaries encoded in UTF8
+<> is actually binary concatenation: <<0,1>> <> <<2,3>>
+add a <<0>> to a string to see it's binary: "hello" <> <<0>>
+a binary with size of 1 is a bitstring
+you can match with binaries: <<0,1,2>> = <<0,1,x>>
+you can match variable bytes at the end of binary with "binary" modifier: <<0,1,x :: binary>> = <<0,1,2,3>> # x = <<2,3>>
+<<104, 101, 108, 108, 111, 32, x :: binary>> = "hello sam" # x = "sam"
+you can do the same with <>: "he" <> more = "hello" # more = llo
+to_string/1
+to_char_list/1
+*** char lists
+are list with characters (codepoints)
+mostly for interfacing with erlang when binary isn't accepted.
+** associative data types
+*** keyword lists
+list = [{:a, 1}, {:b, 2}] is the same as [a:1, b:2]
+access elements: list[:a]
+keywords are sorted
+undefined keywords are nil
+everything just like lists, performance and operators and functions
+list ++ [c: 3] # [a:1, b:2, c:3]
+repeated keys are valid; when fetching keyword, first one is fetched.
+it's used by default in elixir to pass options.
+when the keyword list is the last argument the [] is optional. so:
+if false, do: :this, else: :that # if(false, [do: :this, else: :that])
+can be used in pattern matching but uncommon
+as it grows size and search is slower.
+Keyword module has functions for manipulation.
+*** maps
+hash
+map = %{:a => 1, :b => 2} # or %{a: 1, b: 2}
+map[:a] # undefined keys will be nil
+anything can be key, not just atoms
+can't use variables as keys
+good for pattern matching:
+%{:a => a} = %{:a => 1, 2 => :b} # a = 1
+empty map matches any map
+Map.get/2 # map, key
+Map.to_list/1
+for atoms map.field works for reads: map.a
+for update: %{map  | :a => 2} (fails if key doesn't exist)
+^ these two are better as they're more assertive
+*** Dict
+common interface for keyword lists and maps
+Dict.put/3 # list/map, key, value
+** Modules
+*** compilation and scripted mode
+.ex file are for compilation; compile with elixirc. which generate a beam file containing the bytecode for module.
+starting iex in a folder with beam files, will start the REPL with the modules loaded in the environment.
+.exs files are for script that elixir will simply run
+project folder structure:
+ebin: compiled bytecodes, lib: library .ex files, test: .exs test files
+mix will help with that.
+*** modules
+are defined with defmodule/2
+defmodule MyModule do
+
+end
+*** named functions
+only inside modules
+def/2 for functions defp/2 for private functions
+def sum(a,b) do
+
+end
+can use ? in the name just like ruby
+can have guards and multiple clauses
+def zero?(0) do
+  true
+end
+def zero?(x) when is_number(x) do
+  false
+end
+# my comment: i love it
+default arguments with \\; can be anything even an expression to be evaluated when necessary
+def join(a,b,sep \\ "") docs
+#
+end
+def dowork(x \\ IO.puts "hello" do
+  x
+end
+if function has multiple clauses, make a separate function head
+def join(a, b \\ nil, sep \\ "") # head
+def join(a,b,_sep) when is_nil(b) docs
+  a
+end
+..# and more
+*** functions can be captured and &
+use & to capture a function; arity is necessary
+fun = &Math.zero?/1
+fun.(0) # true
+functions not in a module (imported or local) can be capture without module name.
+& can be used to define quick functions; &1, &2,.. for arguments: fun = &(&1 + 1)
+when defining anonymous functions like this, at least one place holder must be present. ie. function must be partially defined.
+or this can be used for composition:
+fun = &String.replace(&1, "h", "j")
+fun.("hello") # "jello"
+** recursion, map, reduce
+no loops, use recursion, multiple clauses and guards instead.
+recursion on list:
+def double_each([head|tail])... # do head and recursion on tail.
+def double_each([])...
+** Enum and Stream and such
+Enum provides functions to do operations on enumerables:
+Enum.map/2 # Enum.map(1..3, fn x -> x * 2 end) # or ...&(&1 * 2)
+Enum.reduce/3 # enumerable, start_value, fn
+..
+it's supposed to work for many data types, use specific modules for the types for more
+
+Stream almost same as Enum by lazy. evaluating as necessary.
+some interesting methods:
+- Stream.cycle/1 # get a enumerable and make a repeating collection:
+  stream = Stream.cycle([1,2,3])
+  Enum.take(stream, 10) # [1,2,3,1,2,3,1,2,3,1]
+- Stream.unfold/2 # enumerable, fn ; use fn to get next value from the enum
+
+File.stream!/1 to get a file as stream. then Enum.take(n) would take n lines. ensuring the open/close of the resource/file.
+*** Pipe operator |>
+pass the result to next function:
+odd? = &(rem(&1, 2) != 0)
+1..100_000 |> Stream.map(&(&1 * 3)) |> Stream.filter(odd?) |> Enum.sum
+use with streams or enums or...
+the value is always passed as the first parameter.
+
+*** range just like ruby 0..10_000
+** Processes
+spawn/1 # func
+spwans the function in a new process and return a PID object
+self/0 # returns the PID of current process
+Process.alive?/1 # pid
+send/2 # pid, message : sends a message to the pid
+receive/1 waits for messages and then can use multiple clauses and guards to match. can specify an "after" to timeout after that many milliseconds.
+receive do
+  {:one, this, that} ->
+    #
+  {:two, these, those} ->
+    #
+  after
+    1_000 -> "nothing"
+end
+
+flush/0 in shell to flush all the messages to receive
+
+spawn_link/1 spawns a process and links it to the parent in case of error. can be down manually after spawn with Process.link/1
+functions postfixed with _link make the processes bi-directional (spawner and the spawnee). either one of them dies, the other one dies too.
+
+Process.register/2 # pid, name. register an alias for a pid for sending messages
+
+*** State
+keep a process running that holds the state.
+docs example:
+defmodule KV do
+  def start_link do
+    Task.start_link(fn -> loop(%{}) end)
+  end
+
+  defp loop(map) do
+    receive do
+      {:get, key, caller} ->
+        send caller, Map.get(map, key)
+        loop(map)
+      {:put, key, value} ->
+        loop(Map.put(map, key, value))
+    end
+  end
+end
+
+usually not done from scratch but using Elixir/Erlang abstractions. eg. Agent
+*** Tasks
+Task.start/1 and Task.start_link/1 # return in this style {:ok, PID}
+better logging on errors.
+Task.async/1 and Task.await/1 look like mirror the function of start, receive but not sure at all.\\\\\\\\\\\\\\\\\\\\\\-----
+
+*** PID type which holds the reference to a process
+** IO
+methods with ! at the end, raise an error on problems.
+methods without them, return a tuple of result code and details that can be used with pattern matching.
+
+IO is opened in process and the functions interact with that process that will return the result. this way processes and nodes can exchange file and IO.
+
+*** IO module
+work with any IO, by default std ones. pass the IO as parameter otherwise: IO.puts :stderr, "hello world"
+*** File module
+File.open/2 # name, modes
+File.close/1
+File.read/1 # name
+file opens in binary mode, use
+IO.binread/2 # io, chars_count or :line or :all
+IO.binwrite/2 #io, data
+they can also be opened in :utf8 mode
+
+utilities for files, using posix names (just like ruby)
+File.rm/1, File.mkdir/1, File.rm_rf/1, etc.
+
+*** Path module
+provides methods to manipulate paths (just like ruby)
+Path.join/2, Path.expand/1, etc.
+*** group_leader
+the main IO device (:stdout) which can be configured per process
+Process.group_leader/0
+*** StringIO
+represent an string as an IO device
+
+*** iodata and chardata
+bin* functions need binaries
+non-bin* ones expect chardata (list of characters)
+as you can pass lists to IO functions too, that ( ^ ) can make a difference
+** alias, require and import
+all are directives meaning they're lexically scoped.
+*** alias
+alias a module to something
+without as options, the alias would be the last part of module name
+
+alias MyModule, as: Awesome
+alias Math.List as: List # same as: alias Math.List
+
+*** require
+you need to require a module before using it's macros.
+require Integer
+Integer.is_odd(3) # is_odd isn't a function. it's a macro
+
+*** import
+import definitions in the module in the scope
+accepts "only" and "except" options and definition names or one of :macros or :functions
+without any option, will import everything which isn't too good.
+import List, only: [duplicate: 2] # function: arity
+import Integer, only: :macros
+
+*** behind the scene
+erlang VM translates the aliases (module names and such: Something, MyModule, Integer, etc.) to atoms:
+Integer => :"Elixir.Integer"
+Foo.Barr => :"Foo.Bar"
+and when calling functions from a module we're calling the functions on that atom
+is_atom(String) # true
+:"Elixir.String" == String # true
+
+*** nesting
+module definitions can be nested.
+it's arbitrary, parents don't have to be defined.
+if not in the same lexical scope, full module name must be stated.
+** module attributes
+*** attributes as annotations
+def MyModule
+  @vsn = 2 # version attribute
+end
+elixir has built-in attributes. some of them:
+@moduledoc module documentation
+@doc function docs
+@behaviour specifying behaviour
+@before_compile before compile hook
+
+typespecs don't do anything for compiler (like helping optimization) but they're useful for documentation.
+there are also attributes related to typespec:
+@spec spec for function
+@callback spec for callback
+@type define a new type
+@typep private type
+@opaque opaque type
+
+*** elixir docs system
+use """ for heredoc
+heredocs support markdown
+
+defmodule Math do
+  @moduledoc """
+  Provides math-related functions.
+
+  ## Examples
+
+      iex> Math.sum(1, 2)
+      3
+
+  """
+
+  @doc """
+  Calculates the sum of two numbers.
+  """
+  def sum(a, b), do: a + b
+end
+
+ExDoc generates html output for docs. and h/1 method displays theses docs in the shell.
+*** attributes as constant
+only in compile time,
+if used inside functions, it's replaced by the attribute value at the compilation and not at the runtime when function is accessed.
+defmodule MyServer do
+  @initial_state %{host: "147.0.0.1", port: 3456}
+  # other stuff
+end
+
+Module.register_attribute/3 can be used to use attributes differently.
+*** attributes as temporarily storage
+in conjunction with callbacks, attributes can be used to create DSLs and help in meta programming.
+it's used just like other attributes.
+
+defmodule MyTest do
+  use ExUnit.Case
+
+  @tag :external
+  test "contacts external service" do
+    # ...
+  end
+end
+
+another example:
+Plug library, uses plug/1 macro to add plugs to handle connection to the stack. it stores the supplied plug in @plugs attribute. before compilation a callback is run that defined a method that uses all of the values in the @plugs which will be substituted on compile (awesome!)
+** Structs
+like maps with predefined fields
+are bare maps and don't have the same protocols. can't be used with Dict module either. only functions from Map module.
+it gets it's name from the module it's defined in.
+Module User
+  defstruct name: nil, age: nil # fields and their default values
+end
+created like this: she = %Person{name: "someone", age: "22"}
+everything just like map
+she.name # "someone"
+he = %{she | name: "someone else"}
+same as maps in pattern matching. both in fields and type with something like this: %User{} = she
+
+the name of struct is stored in __struct__ attribtue: she.__struct__ # User
+** Protocols
+protocols are like interfaces or function overloading. they are defined per type with an optional fallback for other types.
+defprotocol Blank do
+  @fallback_to_any true
+  def blank?(data)
+end
+
+defimpl Blank, for: Integer do
+  def blank?(_), do: false
+end
+
+defimpl Blank, for: List do
+  def blank?([]), do: true
+  def blank?(_), do: false
+end
+...
+then it will be used like this:
+Blank.blank?(0) # false
+Blank.blank?([]) # true
+Blank.blank?([1,2,3,4,5]) # false
+native types: Atom, BitString, Float, Functin, Integer, List, Map, PID, Port, Reference, Tuple
+they can be defined for custom structs defined by defstruct.
+if @fallback_to_any is true, the default can be defined like this:
+defimpl Blank, for: Any do
+  def blank?(_), do: false
+end
+Elixir built-in protocols:
+- Access
+- Collectable
+- Enumerable
+- Inspect inspecting element via inspect/1
+  when result starts with #, the inspection isn't reversible.
+- List.Chars
+- Range.Iterator
+- String.Chars how to convert data structure to string via to_string/0
+** Comprehensions
+using for keyword
+generating:
+for n <- [1,2,3,4], do: n * n
+          \     /
+            ^
+            |
+         this could be any enumerable including ranges, streams, dictionaries, etc.
+
+pattern matching can be used:
+list = [good: 1, good: 2, bad: 3, good: 5]
+for {:good, n} <- list, do: n * n # filters elements with :good key and doubles them: [1, 4, 16]
+
+the second argument before "do" can be a filter:
+for x <- 1..10, Integer.is_even(x), do: n*n # [4, 16, 36, 64, 100]
+
+it can be used for bitstrings, example of converting pixel values into tuples of components:
+pixels = <<213, 45, 132, 64, 76, 32, 76, 0, 0, 234, 32, 15>>
+for <<r::8, g::8, b::8 <- pixels>>, do: {r, g, b} # [{213, 45, 132}, {64, 76, 32}, {76, 0, 0}, {234, 32, 15}]
+
+the result can be collected to any Collectable, not just Lists:
+for << c <- " h ell o wor  ld  " >>, c != ?\s, into: "", do: <<c>> # "helloworld"
+       \                          /
+                   |
+                   v
+   i think operations on the elements
+   of enum happens in the context of it's
+   container syntax. just like how maps
+   are updated which happens in the {}.
+
+or what I've always wanted; mapping a map to a map:
+for {key, val} <- %{a: 1, b: 2, c: 3}, into: %{}, do: {key, val * val}
+
+awesome example of using it with streams:
+stream = IO.stream(:stdio, :line) #stream from stdio line by line
+for line <- stream, into: stream, do: String.upcase(line) <> "\n" # write line in CAPITAL + newline
+** Sigils
+~ followed by a word, delimiter then data. with optional modifiers at the end
+valid delimiters are: / | " ' ( [ { < and their pairs eg. ~r[hello], ~r{hello}, ~r<hello>,..
+elixir sigils:
+- ~s for strings
+~s(hello world, this is terrible) # "hello world this is terrible"
+- ~c for char lists:
+~c(hello world, this is terrible) # 'hello world this is terrible'
+- ~w for word lists
+~w(hello world, this is terrible) # ["hello", "world", "this", "is", "terrible"]
+supports c, s and a modifiers to convert to char lists, strings or atoms
+
+each one of them ( ^ ) have an uppercase counterpart (~S, ~W, ~C). the lowercase ones support interpolation and escaping and uppercase ones don't.
+
+they can also be used for heredoc
+~s"""
+this is a
+multi line
+string
+"""
+
+~S with heredocs are specially useful for @doc attributes.
+
+*** regular expressions
+rg = ~r/foo|bar/
+"foo" =~ rg # true. (just like ruby)
+ "HELLO" =~ ~r/hello/i # true
+
+*** custom sigils
+each sigil (~x) calls a function named sigil_x. eg. sigil_r, sigil_w, etc.
+to define custom sigil you just need to write it's function
+defmodule MySigils do
+  def sigil_i(string, []), do: # value, without modifiers
+    String.to_intger(string)
+  end
+
+  def sigil_i(string, [?n]), do: # value, with modifier n
+    -String.to_intger(string)
+  end
+end
+import MySigils
+~i(13) # 13
+~i(14)n # -14
+
+combining macros and custom sigils you can do compile-time work. elixir does exactly this to compile regular expressions when generating bytecode, to do less computation in runtime.
+** try, catch and rescue
+variables defined inside any of these scope don't leak to the outside context. don't forget!
+*** Errors
+raise runtime errors with raise/1: raise "broke!"
+other errors with raise/2: raise ArgumentError, message: "message"
+
+defining custom errors is somehow similar to defining structs. using defexception in a module, creates an error with the name of that module.
+defmodule MyError do
+  defexception message: "error message"
+end
+raise MyError, message: "custom message" # or without message to use the default
+
+rescue from error with try/rescue:
+try do
+  raise "this is a runtime error"
+rescue
+  e in RuntimeError -> #do your thing
+end
+
+rarely used in elixir, most of functions return tuples of error and message instead which can be caught with pattern matching. if really needed, functions that throw errors have ! at the end of the their name
+
+and it should not be used for control flow! use throws instead
+*** throws
+throw a value, like a return; that will be caught by a try/catch:
+try do
+  # do something
+  # if that happened
+  throw(something)
+  # else
+  "something never happened"
+catch
+  x -> # do something with x
+end
+
+again, rarely used except when working around something bad.
+*** exit/1
+explicitly send exit signal
+argument can be string, integer, atom, whatever.
+can be caught with try/catch
+try do
+  exit "i'm quitting"
+catch
+  :exit, reason -> "#{reason}. hehe, you wish."
+end
+
+but again rare, these stuff is handled with OTP and supervisors.
+*** after
+like ruby finally clause
+try do
+  # something that may cause trouble
+after
+  # cleanup
+end
+** typespecs and behaviours
+*** typespecs
+typespec for functions is defined using @spec directive:
+@spec round(number) :: integer
+def round(number) do
+# ....
+compound types like [integer], or similarly for tuples (maybe maps too?).
+string is specified as String.t to distinguish from binaries which are referred to as strings in erlang.
+
+custom types are defined by @type directive. they can be used on other types or specs:
+def MyModule do
+
+@typedoc """
+my stupid type
+"""
+@type my_new_type :: {atom, number, String.t}
+
+@spec my_function(number) :: my_new_type
+def my_function(x) do
+# ...
+
+they are available outside of the module:
+defmodule OtherModule do
+@spec explode(MyModule.my_new_type) :: String.t
+# ...
+use @typep to private types
+
+static code analyzers (like Dialyzer) use these info so they are useful for private functions too.
+
+*** behaviours
+like interfaces in IO languages, when a module adopts a behaviour, it should implements all of it's methods. functions are defined with defcallback which uses function specification like the one used with @spec.
+defining a behaviour:
+defmodule Parser do
+  use Behaviour
+
+  defcallback parse(String.t) :: any
+  defcallback extensions() :: [String.t]
+end
+
+use a behaviour:
+defmodule AParser do
+  @behaviour Parser
+
+  def parse(str) do: #...
+  def extensions(), do: #...
+end
+
+a warning is generating on compile if a module doesn't implement all of the methods.
+* Mix and OTP
+** getting started
+mix command line tool to create new projects
+
+project config in mix.exs like a gemspec
+main module in lib folder
+mix compile # to compile the project
+iex -S mix # to run an iex with the project loaded (like rails c)
+mix test # to run the tests
+mix test test/kv_test.exs:4 # running a specific test; the line just has to in range of test definition
+
+multiple environment like rails: :dev, :test, :prod
+in the mix.exs, Mix.env provides the environment, which can be used to supply different dependencies based on the current env.
+use MIX_ENV env variable to change the environment.
+
+mix help # use this guy
+** agents
+abstractions for processes:
+Agent: for state
+GenServer: for a generic server
+GenEvent: event managers with multiple handlers
+Task: computation node
+
+HashDict is more efficient for large numbers than maps.
+
+Agent.start/1 # gets a function that when invoked returns the initial state.
+Agent.get/2 # gets a function which will be supplied with the state. and the return value of the function will be returned.
+Agent.update/3 # the supplied function will get the state, change it and return it.
+Agent.get_and_update/2 # the function will be passed the state, and return the value to be returned and the new state in a tuple
+
+** testing
+include case module:
+ExUnit.Case, async: true
+async: true causes the tests to run in parallel. could be problematic for some tests.
+tests in this style:
+test "description" do
+
+end
+
+for setting up the test, use setup callback:
+
+setup do
+  something = # ...
+
+  { :ok, something: something, ..other stuff.. }
+end
+
+anything other than tuple with :ok first, or just :ok, fails all the tests.
+
+for `something` to be available to the tests, we need to define tests like this:
+
+test "cosmos should work", %{something: the_thing} do
+
+now `something` is available as `the_thing` in the test. (or use it's own name; please)
+
+assert/1 for simple assertion
+assert_receive/1 # which checks messages against a pattern with 100ms timeout
+** GenServer
+GenServer needs a client and a server. each can be defined in a separate module in the same one. server should define callbacks and client should define functions to interact with the server.
+client sends message to the server with cast/2 and call/3. call/3 is sync and will block for response and cast is async. cast doesn't even guarantee the server received the message.
+server define handle_cast/2 and handle_call/3 to respond to the client
+
+it can be very confusing.
+server maintains it's own state. the return value from each of the functions is a tuple containing an atom stating the type of the response, an optional reply and the new state of the server which will be maintained by the GenServer.
+
+
+other messages send to the server (by monitors for example) will be handled by handle_info/2
+
+possible atoms that server returns are: :stop, :reply and :noreply
+
+GenServer.call/3 # server, message, \\timeout
+GenServer.cast/2 # server, message
+
+GenServer.handle_cast/2 # message, server_state
+GenServer.handle_call/2 # message, from_pid, server_state
+
+for the response of the server calls, look at the erlang docs; there are too many.
+** Monitors
+Process.monitor/1 gets a PID and monitors it. when the monitored process dies, the monitoring process will receive a message. which will pass along the monitor reference.
+** GenEvent
+it's a basic event handler. the manager and the handlers run in the same process. the manager is notified and will notify the handlers with the event. it has an internal state just like a GenServer that is passed to the handlers.
+
+Gen.start_link/0 # returns {:ok, event_manager}
+
+the handler is module with "use GenEvent" and implementation of handle_event/2 # event, state
+defmodule Forwarder dd
+  use GenEvent
+
+  def handle_event(event, state)
+    # do your handling
+    {:ok, new_state}
+  end
+end
+
+to register a handler:
+GenEvent.add_handler/3 # gen_event, handler_module, initial_state
+and GenEvent.add_Mon_handler/3 which is the same as the add_handler/3 with a monitor setup for the current process that will remove the handler when the process is dead.
+
+to dispatch events:
+GenEvent.notify/2 # manager, event. similar to cast. fire and forget. return :ok
+GenEvent.sync_notify/2 # manager, event. similar to call. also returns :ok
+
+*** Event streams
+GenEvent.stream/1 # converts an event manager to a stream which is enumerable.
+for example:
+for x <- GenEvent.stream(manager), do: IO.inspect(x)
+will consume the events as they're dispatched and pass print them. mind that this is a blocking operation.
+** Supervisors
+supervisors monitor the process with a range of strategies.
+"use" Supervisor in the module
+start_link/3 # module_with_callback, args_to_pass_to_init, \\options
+the Module defined the init/1 callback which will be called after start_link
+
+worker
+erlang version: worker/2 # Module, args
+elixir version: worker/3 # Module, args, options\\[]
+
+Supervisors calls the init/1 on the Module passed to it as children
+
+supervise/2 # children, options
+children is a list of workers and/or supervisors. options may include strategy, max_restarts, max_seconds
+and returns {:ok, tupe}; tuple is the supervisor specification
+available strategies:
+
+- simple_one_for_one: for just one child and when dynamically attaching children (using Supervisor.start_child/2). many Supervisor functions are different when using this.
+- one_for_one: if child terminates, it's restarted.
+- one_for_all: if a child terminates, all the children are terminated and restarted.
+- rest_for_one: if a child terminates, the rest of children are terminated. then the failed child will restart and then the rest.
+
+pass :name keyword to register the child as that name; common to use the module itself or an arbitrary name:
+worker(MyModule, [other_process_param, ,[name: MyModule]])
+worker(MyModule, [other_process_param, ,[name: NS.TheChildProcess]])
+can't be used for simple_one_for_one strategy;
+
+a list of these workers or other supervisors will be passed to Supervisor.supervise/2
+** Application and Mixfile
+
+.app file generated is the app spec in erlang.
+customized by the value returned by application/0 in mix file.
+
+Application.start/1 # atom
+Application.stop/1
+`iex -S mix run --no-start` to start the console without starting the application
+
+trying to start an application when dependencies aren't up (app depends on logger):
+Application.stop(:app)
+Application.stop(:logger)
+Application.start(:app) # {:error, {:not_started, :logger}}
+
+Application.ensure_all_started/1 # to load the dependencies if necessary
+
+*** application/0 in the mixfile
+example:
+def application do
+  [applications: [:logger], mod: {Module, []}]
+end
+
+applications will run automatically, and Module will be the supervisor
+
+*** defining application callbacks:
+- :mod keyword in return value of application/0 in mix file; stands for application_callback_module.
+- mod keyword value format: {Mod, args}; args are often []
+- 'use' Application module in the callback module
+- define start/2 # start_type, args;
+  returns: {:ok, pid} | {:ok, pid, State} | {:error, reason}.
+  start_type can be :normal, {:takeover, node} or {:failover, node}
+- define stop/1 for the stop callback
+** ETS: Erlang Term Storage
+term storage per process.
+
+:ets.new/2 # name(atom), [Option]; Option includes type, access, heir,.. look at the docs
+
+four types: set, ordered_set, bag and duplicate_bag
+when process terminates, table can be transferred with "heir" option, of calling give_away/3 # table, new_owner, gift_data; gift_data will be part of the message send to the new owner
+use :named_table in the options to be able to access the table by name instead of ref
+access types:
+- public: read/write for everyone
+- protected: read/write for owner process, read for everyone else. it's the default
+- private: just read/write for the owner
+
+ets:insert/2 # table, tuple or [tuple] of key,value; insert_new/2 returns false if key already exist
+ets:lookup/2 # table, key; returns the tuple or [tuple]
+ets:delete/1 # to delete the entire table
+ets:delete/2 # to delete value/s associated with a key
+*** ets:fold/3 # fn, acc0, table
+fn: (el, acc) -> acc. is a basic reduce function, iterating each time getting the element, starting with an accumulator (acc0) and updating it. el it self is in the form of {key, value}.
+acc0 is the initial value of accumulator.
+** dependencies and umbrella projects
+add dependencies to deps method of the mix file, which gives them to project definition
+def deps do
+  [{:plug, "~> 0.6.4}, {:dep2, "= 1.2"}]
+end
+{:plug, git: "repo_address"}
+
+mix help deps # to get help for dependency management
+
+internal dependencies either through git or umbrella projects
+
+*** umbrella projects
+mix new project_name --umbrella
+dependencies are shared between apps under the umbrella
+depending on sibling umbrella project in deps function: {:other_app, in_umbrella: true}
+
+in the sub projects, deps and lockfile keywords should point to the umbrella projects
+*** versions
+"== 2.0.0" exact
+"> 2.0.0" or >=
+">= 2.0.0 and < 2.2.0"
+~> to be flexible
+"~> 2.1"   : >= 2.1.0 and < 3.0.0
+"~> 2.1.2" : >= 2.1.2 and < 2.2.0
